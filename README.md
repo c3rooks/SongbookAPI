@@ -28,7 +28,7 @@ A step by step series of examples that tell you how to get a development environ
 
 ### Running the API
 
-To run the API, use the `dotnet run` command: dotnet run
+To run the API, use the `dotnet run` command
 
 Then, navigate to `https://localhost:5001/` to interact with the API.
 
