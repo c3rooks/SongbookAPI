@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "RHZPjt5A5CpviiL+FogAUns7DG7XiBZ4hnrXt/h5utUC8N6fmTMjtBqVoItc26H2YvL54EyV26bzH7x2nMTYfw==",
+  "dgSpecHash": "l+Bc1YQ1Ms/Ti+FB+C4Wi3AHCGiz/Vs7gyEIb7QTYAAD8rw4uqGFNHKiGq/VenelVrdFtKXzuKkooNSSGiNMEQ==",
   "success": true,
-  "projectFilePath": "C:\\Users\\Corey\\Desktop\\Music-API\\GuitarSongbook\\GuitarSongbook.csproj",
+  "projectFilePath": "C:\\Users\\Corey\\Desktop\\Music-API\\SongbookAPI\\Songbook.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Corey\\.nuget\\packages\\awssdk.core\\3.7.100.14\\awssdk.core.3.7.100.14.nupkg.sha512",
     "C:\\Users\\Corey\\.nuget\\packages\\awssdk.securitytoken\\3.7.100.14\\awssdk.securitytoken.3.7.100.14.nupkg.sha512",

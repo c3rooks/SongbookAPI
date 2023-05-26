@@ -14,8 +14,8 @@ public class SongsController : ControllerBase
     public SongsController(IMongoClient mongoClient)
     {
         _mongoClient = mongoClient;
-        _database = _mongoClient.GetDatabase("YourDatabaseName");
-        _songs = _database.GetCollection<Song>("YourCollectionName");
+        _database = _mongoClient.GetDatabase("SongbookDB");
+        _songs = _database.GetCollection<Song>("Songs");
     }
 
     // GET: api/Songs
