@@ -1,7 +1,12 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
+using SongbookAPI.Models;
+using SongbookAPI.Scrapers;
+using System.Net.Http.Headers;
+
 
 [ApiController]
 [Route("[controller]")]
@@ -19,28 +24,32 @@ public class SongsController : ControllerBase
     }
 
     [HttpPost]
-    public ActionResult<Song> Create(SongDTO songIn)
+    public async Task<ActionResult<Song>> Create(SongDTO songIn)
     {
+        UltimateGuitarScraper scraper = new UltimateGuitarScraper();
+        string tabUrl = await scraper.GetFirstTabUrl(songIn.Name);
+
         var song = new Song
         {
             Name = songIn.Name,
             Artist = songIn.Artist,
             Genre = songIn.Genre,
-            Chords = songIn.Chords
+            Chords = songIn.Chords,
+            SpotifyTrackId = await GetSpotifyTrackId(songIn.Name, songIn.Artist),
+            UltimateGuitarTabUrl = tabUrl // Updated here
         };
-        
-        _songs.InsertOne(song);  // Assuming _songs is your MongoDB collection
+
+        _songs.InsertOne(song);
         return CreatedAtRoute("GetSong", new { id = song.Id.ToString() }, song);
     }
 
-    // GET: api/Songs
+
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Song>>> GetSongs()
     {
         return Ok(await _songs.Find(song => true).ToListAsync());
     }
 
-    // GET: api/Songs/{id}
     [HttpGet("{id}", Name = "GetSong")]
     public async Task<ActionResult<Song>> GetSong(string id)
     {
@@ -51,28 +60,26 @@ public class SongsController : ControllerBase
             return NotFound();
         }
 
-        return Ok(song);
+        return song;
     }
 
-    // PUT: api/Songs/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutSong(string id, [FromBody] Song songIn)
+    public async Task<IActionResult> Update(string id, Song songIn)
     {
-        var song = await _songs.Find<Song>(song => song.Id == id).FirstOrDefaultAsync();
+        var song = await _songs.Find<Song>(s => s.Id == id).FirstOrDefaultAsync();
 
         if (song == null)
         {
             return NotFound();
         }
 
-        await _songs.ReplaceOneAsync(song => song.Id == id, songIn);
+        _songs.ReplaceOne(s => s.Id == id, songIn);
 
         return NoContent();
     }
 
-    // DELETE: api/Songs/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteSong(string id)
+    public async Task<IActionResult> Delete(string id)
     {
         var song = await _songs.Find<Song>(song => song.Id == id).FirstOrDefaultAsync();
 
@@ -81,39 +88,32 @@ public class SongsController : ControllerBase
             return NotFound();
         }
 
-        await _songs.DeleteOneAsync(song => song.Id == id);
+        _songs.DeleteOne(song => song.Id == id);
 
         return NoContent();
     }
 
-    // GET: api/Songs/search/{query}
-    [HttpGet("search/{query}")]
-    public async Task<ActionResult<IEnumerable<Song>>> SearchSongs(string query)
+    private async Task<string> GetSpotifyTrackId(string songName, string artistName)
+{
+    string accessToken = "BQBJRkezVUnsZMiUZZhaCzUAIqViky0-IBpKFq428t8aOw9MbhxgyR344DnqKMnBhwFdwSrqf_WSLbImBRwyVxgLmCvVwriQNEkFPucezMjWetjDqKw";
+
+    using HttpClient client = new HttpClient();
+    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+    var response = await client.GetAsync($"https://api.spotify.com/v1/search?q=track:{songName}%20artist:{artistName}&type=track&limit=1");
+    
+    if (response.IsSuccessStatusCode)
     {
-        var songs = await _songs.Find(song => 
-            song.Name.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0 ||
-            song.Artist.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0 ||
-            song.Genre.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)
-            .ToListAsync();
-
-        return Ok(songs);
+        var content = await response.Content.ReadAsStringAsync();
+        var spotifyObject = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(content);
+        var trackId = spotifyObject.tracks.items[0].id;
+        
+        return trackId;
     }
-
-    // POST: api/Songs/{id}/chords
-    [HttpPost("{id}/chords")]
-    public async Task<ActionResult<Song>> AddChord(string id, [FromBody] string chord)
+    else
     {
-        var song = await _songs.Find<Song>(song => song.Id == id).FirstOrDefaultAsync();
-
-        if (song == null)
-        {
-            return NotFound();
-        }
-
-        song.Chords.Add(chord);
-
-        await _songs.ReplaceOneAsync(song => song.Id == id, song);
-
-        return Ok(song);
+        throw new Exception("Failed to retrieve track from Spotify.");
     }
+}
+
 }
