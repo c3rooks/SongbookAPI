@@ -1,6 +1,6 @@
 # Guitar Songbook API
 
-This project is a .NET Core Web API that interacts with a MongoDB database to store and manage songs with guitar chords. This API serves as a backend for a Guitar Songbook application.
+This project is a .NET Core Web API that interacts with a MongoDB database to store and manage songs with guitar chords. This API serves as a backend for a Tab Songbook application.
 
 ## Getting Started
 
