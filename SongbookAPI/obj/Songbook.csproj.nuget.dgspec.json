@@ -1,28 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Corey\\Desktop\\Music-API\\SongbookAPI\\Songbook.csproj": {}
+    "/Users/coreycrooks/Coding/Git/SongbookAPI/SongbookAPI/Songbook.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Corey\\Desktop\\Music-API\\SongbookAPI\\Songbook.csproj": {
+    "/Users/coreycrooks/Coding/Git/SongbookAPI/SongbookAPI/Songbook.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Corey\\Desktop\\Music-API\\SongbookAPI\\Songbook.csproj",
+        "projectUniqueName": "/Users/coreycrooks/Coding/Git/SongbookAPI/SongbookAPI/Songbook.csproj",
         "projectName": "Songbook",
-        "projectPath": "C:\\Users\\Corey\\Desktop\\Music-API\\SongbookAPI\\Songbook.csproj",
-        "packagesPath": "C:\\Users\\Corey\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Corey\\Desktop\\Music-API\\SongbookAPI\\obj\\",
+        "projectPath": "/Users/coreycrooks/Coding/Git/SongbookAPI/SongbookAPI/Songbook.csproj",
+        "packagesPath": "/Users/coreycrooks/.nuget/packages/",
+        "outputPath": "/Users/coreycrooks/Coding/Git/SongbookAPI/SongbookAPI/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Corey\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/Users/coreycrooks/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net7.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Users\\Corey\\Downloads\\SAMLv20-licensed\\SAML for .NET\\Bin": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -73,7 +70,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.203\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/x64/sdk/7.0.201/RuntimeIdentifierGraph.json"
         }
       }
     }
