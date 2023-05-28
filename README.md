@@ -1,6 +1,7 @@
 # Guitar Songbook API
 
-This project is a .NET Core Web API that interacts with a MongoDB database to store and manage songs with guitar chords. This API serves as a backend for a Tab Songbook application.
+This project is a .NET Core Web API that collects and scrapes guitar tabs from various sources, including Ultimate Guitar, and stores them in a MongoDB database. The end goal of this project is to integrate with Spotify accounts and playlists, allowing users to easily access guitar tabs related to their favorite music. This will make it easier to learn songs and have a catalog of tabs right at your fingertips, with audio playback available for each song.
+
 
 ## Getting Started
 

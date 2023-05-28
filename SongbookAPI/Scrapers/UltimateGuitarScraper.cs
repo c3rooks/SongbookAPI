@@ -1,8 +1,8 @@
 using PuppeteerSharp;
 using System.Threading.Tasks;
+
 namespace SongbookAPI.Scrapers
 {
-    
 public class UltimateGuitarScraper
 {
     private const string SearchUrlFormat = "https://www.ultimate-guitar.com/search.php?search_type=title&value={0}";
