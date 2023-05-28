@@ -90,3 +90,7 @@ C:/Users/Corey/Desktop/Music-API/SongbookAPI/obj/Debug/net7.0/ref/Songbook.dll
 /Users/coreycrooks/Coding/Git/SongbookAPI/SongbookAPI/obj/Debug/net7.0/Songbook.pdb
 /Users/coreycrooks/Coding/Git/SongbookAPI/SongbookAPI/obj/Debug/net7.0/Songbook.genruntimeconfig.cache
 /Users/coreycrooks/Coding/Git/SongbookAPI/SongbookAPI/obj/Debug/net7.0/ref/Songbook.dll
+/Users/coreycrooks/Coding/Git/SongbookAPI/SongbookAPI/bin/Debug/net7.0/HtmlAgilityPack.dll
+/Users/coreycrooks/Coding/Git/SongbookAPI/SongbookAPI/bin/Debug/net7.0/Microsoft.Bcl.AsyncInterfaces.dll
+/Users/coreycrooks/Coding/Git/SongbookAPI/SongbookAPI/bin/Debug/net7.0/Newtonsoft.Json.dll
+/Users/coreycrooks/Coding/Git/SongbookAPI/SongbookAPI/bin/Debug/net7.0/PuppeteerSharp.dll
