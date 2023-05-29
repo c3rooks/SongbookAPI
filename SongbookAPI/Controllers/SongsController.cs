@@ -5,9 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 using SongbookAPI.Models;
 using SongbookAPI.Scrapers;
+using System.Net.Http;
 using System.Net.Http.Headers;
-using SongbookAPI.Scrapers;
-
 
 [ApiController]
 [Route("[controller]")]
@@ -35,12 +34,10 @@ public class SongsController : ControllerBase
         return Ok(tab);
     }
 
-
     [HttpPost]
     public async Task<ActionResult<Song>> Create(SongDTO songIn)
     {
-        UltimateGuitarScraper scraper = new UltimateGuitarScraper();
-        string tabUrl = await scraper.GetFirstTabUrl(songIn.Name);
+        string tabUrl = await _scraper.GetFirstTabUrl(songIn.Name);
 
         var song = new Song
         {
@@ -49,13 +46,12 @@ public class SongsController : ControllerBase
             Genre = songIn.Genre,
             Chords = songIn.Chords,
             SpotifyTrackId = await GetSpotifyTrackId(songIn.Name, songIn.Artist),
-            UltimateGuitarTabUrl = tabUrl // Updated here
+            UltimateGuitarTabUrl = tabUrl 
         };
 
         _songs.InsertOne(song);
         return CreatedAtRoute("GetSong", new { id = song.Id.ToString() }, song);
     }
-
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Song>>> GetSongs()
@@ -75,7 +71,6 @@ public class SongsController : ControllerBase
 
         return song;
     }
-
 
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(string id, Song songIn)
@@ -108,34 +103,34 @@ public class SongsController : ControllerBase
     }
 
     private async Task<string> GetSpotifyTrackId(string songName, string artistName)
-{
-    string accessToken = "BQBJRkezVUnsZMiUZZhaCzUAIqViky0-IBpKFq428t8aOw9MbhxgyR344DnqKMnBhwFdwSrqf_WSLbImBRwyVxgLmCvVwriQNEkFPucezMjWetjDqKw";
+    {
+        string accessToken = "BQBJRkezVUnsZMiUZZhaCzUAIqViky0-IBpKFq428t8aOw9MbhxgyR344DnqKMnBhwFdwSrqf_WSLbImBRwyVxgLmCvVwriQNEkFPucezMjWetjDqKw";
 
-    using HttpClient client = new HttpClient();
-    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        using HttpClient client = new HttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-    var response = await client.GetAsync($"https://api.spotify.com/v1/search?q=track:{songName}%20artist:{artistName}&type=track&limit=1");
+        var response = await client.GetAsync($"https://api.spotify.com/v1/search?q=track:{songName}%20artist:{artistName}&type=track&limit=1");
     
-    if (response.IsSuccessStatusCode)
-    {
-        var content = await response.Content.ReadAsStringAsync();
-        var spotifyObject = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(content);
-        var trackId = spotifyObject.tracks.items[0].id;
-        
-        return trackId;
+        if (response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            var spotifyObject = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(content);
+            var trackId = spotifyObject.tracks.items[0].id;
+            
+            return trackId;
+        }
+        else
+        {
+            throw new Exception("Failed to retrieve track from Spotify.");
+        }  
     }
-    else
-    {
-        throw new Exception("Failed to retrieve track from Spotify.");
-    }  
-}
 
-[HttpGet("tabs/{songName}/{artistName}")]
-public async Task<ActionResult<Song>> GetTab(string songName, string artistName)
+    [HttpGet("tabs/{songName}/{artistName}")]
+public async Task<ActionResult<UltimateTabInfo>> GetTab(string songName, string artistName)
 {
     // Check if the song is already in the database
     var song = await _songs.Find<Song>(s => s.Name == songName && s.Artist == artistName).FirstOrDefaultAsync();
-    
+
     // If the song is not in the database, or if it is in the database but the tab has not been fetched yet
     if (song == null || string.IsNullOrEmpty(song.TabContent))
     {
@@ -166,14 +161,23 @@ public async Task<ActionResult<Song>> GetTab(string songName, string artistName)
         {
             song.UltimateGuitarTabUrl = tabUrl;
             song.TabContent = tabContent;
-            
+
             _songs.ReplaceOne(s => s.Id == song.Id, song);
         }
     }
 
-    return song;
+    // Construct UltimateTabInfo object
+    var tabInfo = new UltimateTabInfo(
+        song.Name,
+        song.Artist,
+        "", // Provide the appropriate author value here
+        new UltimateTab(),
+        "", // Provide the appropriate difficulty value here
+        "", // Provide the appropriate key value here
+        "", // Provide the appropriate capo value here
+        "" // Provide the appropriate tuning value here
+    );
+
+    return tabInfo;
 }
-
-
-
 }
