@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "M/YVuYZTl4LS1qJskb/BKGwt+YViKisGPbgdwbQTMi9tP7rrAYdrhYK+hvdbGyNG9K+HRD9BDZFqIrOHQ+06/Q==",
+  "dgSpecHash": "GLYhata2+PMfrk9CUS2K2JmP3hP3UAWTx6IKwDvOuZtJ8hrIR+nGM0ACaZan0SLMmnAi/0cdaTlbS/WsmzdpKg==",
   "success": true,
   "projectFilePath": "/Users/coreycrooks/Coding/Git/SongbookAPI/SongbookAPI/Songbook.csproj",
   "expectedPackageFiles": [
+    "/Users/coreycrooks/.nuget/packages/anglesharp/1.0.1/anglesharp.1.0.1.nupkg.sha512",
     "/Users/coreycrooks/.nuget/packages/awssdk.core/3.7.100.14/awssdk.core.3.7.100.14.nupkg.sha512",
     "/Users/coreycrooks/.nuget/packages/awssdk.securitytoken/3.7.100.14/awssdk.securitytoken.3.7.100.14.nupkg.sha512",
     "/Users/coreycrooks/.nuget/packages/dnsclient/1.6.1/dnsclient.1.6.1.nupkg.sha512",
@@ -38,6 +39,7 @@
     "/Users/coreycrooks/.nuget/packages/system.runtime.compilerservices.unsafe/6.0.0/system.runtime.compilerservices.unsafe.6.0.0.nupkg.sha512",
     "/Users/coreycrooks/.nuget/packages/system.security.accesscontrol/5.0.0/system.security.accesscontrol.5.0.0.nupkg.sha512",
     "/Users/coreycrooks/.nuget/packages/system.security.principal.windows/5.0.0/system.security.principal.windows.5.0.0.nupkg.sha512",
+    "/Users/coreycrooks/.nuget/packages/system.text.encoding.codepages/7.0.0/system.text.encoding.codepages.7.0.0.nupkg.sha512",
     "/Users/coreycrooks/.nuget/packages/system.text.encodings.web/6.0.0/system.text.encodings.web.6.0.0.nupkg.sha512",
     "/Users/coreycrooks/.nuget/packages/zstdsharp.port/0.6.2/zstdsharp.port.0.6.2.nupkg.sha512"
   ],

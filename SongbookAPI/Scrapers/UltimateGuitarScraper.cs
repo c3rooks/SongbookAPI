@@ -1,35 +1,41 @@
-using PuppeteerSharp;
+using System.Net.Http;
 using System.Threading.Tasks;
+using AngleSharp.Html.Parser; 
 
-namespace SongbookAPI.Scrapers
-{
+
+
+namespace SongbookAPI.Scrapers{
 public class UltimateGuitarScraper
 {
-    private const string SearchUrlFormat = "https://www.ultimate-guitar.com/search.php?search_type=title&value={0}";
+    private HttpClient _httpClient = new HttpClient();
+
+    public async Task<string> DownloadHtml(string url)
+    {
+        return await _httpClient.GetStringAsync(url);
+    }
+
+    public UltimateTab ParseHtml(string html)
+    {
+        var parser = new HtmlParser();
+        var document = parser.ParseDocument(html);
+        var tab = new UltimateTab();
+        tab.Title = document.QuerySelector("h1").TextContent.Trim();
+        var tabContent = document.QuerySelector(".js-store");
+        var preContent = tabContent.PreviousElementSibling;
+        tab.Tablature = preContent.TextContent;
+        return tab;
+    }
 
     public async Task<string> GetFirstTabUrl(string songName)
     {
-        // Launch the browser
-        await new BrowserFetcher().DownloadAsync(BrowserFetcher.DefaultChromiumRevision);
-        using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
-        {
-            Headless = true
-        });
+        throw new NotImplementedException();
+    }
 
-        // Open a new page
-        using var page = await browser.NewPageAsync();
-
-        // Navigate to the search page
-        string searchUrl = string.Format(SearchUrlFormat, Uri.EscapeDataString(songName));
-        await page.GoToAsync(searchUrl);
-
-        // Select the first tab URL
-        string firstTabUrl = await page.EvaluateFunctionAsync<string>(@"() => {
-            let firstTabNode = document.querySelector('div.js-tp_top a.link-primary');
-            return firstTabNode ? firstTabNode.href : null;
-        }");
-
-        return firstTabUrl;
+    public async Task<string> GetTabContent(string html)
+    {
+        // You need to implement this method. It should parse the HTML
+        // to extract the content of the tab.
+        throw new NotImplementedException();
     }
 }
 }

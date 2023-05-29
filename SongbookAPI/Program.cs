@@ -1,4 +1,7 @@
 using MongoDB.Driver;
+using System.IO;
+using Microsoft.Extensions.DependencyInjection;
+using SongbookAPI.Scrapers;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration
@@ -8,6 +11,7 @@ builder.Configuration
 var connectionString = builder.Configuration.GetConnectionString("MongoDb");
 builder.Services.AddSingleton<IMongoClient>(new MongoClient(connectionString));
 // Add services to the container.
+builder.Services.AddSingleton<UltimateGuitarScraper>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

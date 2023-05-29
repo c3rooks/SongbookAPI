@@ -6,6 +6,7 @@ using MongoDB.Driver;
 using SongbookAPI.Models;
 using SongbookAPI.Scrapers;
 using System.Net.Http.Headers;
+using SongbookAPI.Scrapers;
 
 
 [ApiController]
@@ -15,13 +16,25 @@ public class SongsController : ControllerBase
     private readonly IMongoClient _mongoClient;
     private readonly IMongoDatabase _database;
     private readonly IMongoCollection<Song> _songs;
+    private readonly UltimateGuitarScraper _scraper;
 
-    public SongsController(IMongoClient mongoClient)
+    public SongsController(IMongoClient mongoClient, UltimateGuitarScraper scraper)
     {
         _mongoClient = mongoClient;
+        _scraper = scraper;
         _database = _mongoClient.GetDatabase("SongbookDB");
         _songs = _database.GetCollection<Song>("Songs");
     }
+
+    [HttpGet("tab/{id}")]
+    public async Task<IActionResult> GetTab(string id)
+    {
+        var url = $"https://www.ultimate-guitar.com/tab/{id}";
+        var html = await _scraper.DownloadHtml(url);
+        var tab = _scraper.ParseHtml(html);
+        return Ok(tab);
+    }
+
 
     [HttpPost]
     public async Task<ActionResult<Song>> Create(SongDTO songIn)
@@ -62,6 +75,7 @@ public class SongsController : ControllerBase
 
         return song;
     }
+
 
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(string id, Song songIn)
@@ -113,7 +127,53 @@ public class SongsController : ControllerBase
     else
     {
         throw new Exception("Failed to retrieve track from Spotify.");
-    }
+    }  
 }
+
+[HttpGet("tabs/{songName}/{artistName}")]
+public async Task<ActionResult<Song>> GetTab(string songName, string artistName)
+{
+    // Check if the song is already in the database
+    var song = await _songs.Find<Song>(s => s.Name == songName && s.Artist == artistName).FirstOrDefaultAsync();
+    
+    // If the song is not in the database, or if it is in the database but the tab has not been fetched yet
+    if (song == null || string.IsNullOrEmpty(song.TabContent))
+    {
+        // Fetch the tab
+        UltimateGuitarScraper scraper = new UltimateGuitarScraper();
+        string tabUrl = await scraper.GetFirstTabUrl(songName);
+        string tabContent = await scraper.GetTabContent(tabUrl); // This method doesn't exist yet, you'll need to implement it
+
+        // If the song is not in the database, create a new song
+        if (song == null)
+        {
+            song = new Song
+            {
+                Name = songName,
+                Artist = artistName,
+                // Genre and Chords aren't provided, so they'll need to be set later
+                Genre = null,
+                Chords = null,
+                SpotifyTrackId = await GetSpotifyTrackId(songName, artistName),
+                UltimateGuitarTabUrl = tabUrl,
+                TabContent = tabContent
+            };
+
+            _songs.InsertOne(song);
+        }
+        // If the song is in the database, update it with the fetched tab
+        else
+        {
+            song.UltimateGuitarTabUrl = tabUrl;
+            song.TabContent = tabContent;
+            
+            _songs.ReplaceOne(s => s.Id == song.Id, song);
+        }
+    }
+
+    return song;
+}
+
+
 
 }
