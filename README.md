@@ -33,13 +33,13 @@ Then, navigate to https://localhost:5001/ to interact with the API.
 
 This API includes the following endpoints:
 
-GET /songs: Get all songs.
-GET /songs/{id}: Get a song by ID.
-POST /songs: Create a new song.
-PUT /songs/{id}: Update an existing song by ID.
-DELETE /songs/{id}: Delete a song by ID.
-GET /songs/tab/{id}: Get tab information for a song.
-GET /songs/tabs/{songName}/{artistName}: Get tab information for a song by its name and artist.
+- `GET /songs`: Get all songs.
+- `GET /songs/{id}`: Get a song by ID.
+- `POST /songs`: Create a new song.
+- `PUT /songs/{id}`: Update an existing song by ID.
+- `DELETE /songs/{id}`: Delete a song by ID.
+- `GET /songs/tab/{id}`: Get tab information for a song.
+- `GET /songs/tabs/{songName}/{artistName}`: Get tab information for a song by its name and artist.
 
 ### Contributing
 If you wish to contribute to this project, please first discuss the change you wish to make via issue, email, or any other method with the owners of this repository.
