@@ -34,24 +34,35 @@ public class SongsController : ControllerBase
         return Ok(tab);
     }
 
-    [HttpPost]
-    public async Task<ActionResult<Song>> Create(SongDTO songIn)
+    [HttpPost] 
+public async Task<ActionResult<Song>> Create(SongDTO songIn)
+{
+    string tabUrl = await _scraper.GetFirstTabUrl(songIn.Name);
+
+    var tabInfo = await _scraper.ParseTab(tabUrl);
+
+    var song = new Song
     {
-        string tabUrl = await _scraper.GetFirstTabUrl(songIn.Name);
+        Name = songIn.Name,
+        Artist = songIn.Artist,
+        Genre = songIn.Genre,
+        Chords = songIn.Chords,
+        SpotifyTrackId = await GetSpotifyTrackId(songIn.Name, songIn.Artist),
+        UltimateGuitarTabUrl = tabUrl,
+        //TabContent = tabInfo.TabContent != null ? tabInfo.TabContent : string.Empty, // Commented out this line
+        Author = tabInfo.Author,
+        Difficulty = tabInfo.Difficulty,
+        Key = tabInfo.Key,
+        Capo = tabInfo.Capo,
+        Tuning = tabInfo.Tuning,
+        TabUrl = tabInfo.TabUrl
+    };
 
-        var song = new Song
-        {
-            Name = songIn.Name,
-            Artist = songIn.Artist,
-            Genre = songIn.Genre,
-            Chords = songIn.Chords,
-            SpotifyTrackId = await GetSpotifyTrackId(songIn.Name, songIn.Artist),
-            UltimateGuitarTabUrl = tabUrl 
-        };
+    _songs.InsertOne(song);
+    return CreatedAtRoute("GetSong", new { id = song.Id.ToString() }, song);
+}
 
-        _songs.InsertOne(song);
-        return CreatedAtRoute("GetSong", new { id = song.Id.ToString() }, song);
-    }
+
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Song>>> GetSongs()
@@ -125,59 +136,88 @@ public class SongsController : ControllerBase
         }  
     }
 
-    [HttpGet("tabs/{songName}/{artistName}")]
-public async Task<ActionResult<UltimateTabInfo>> GetTab(string songName, string artistName)
+    [HttpGet("song/{songName}/{artistName}")]
+public async Task<ActionResult<UltimateTabInfo>> GetSongInfo(string songName, string artistName)
 {
-    // Check if the song is already in the database
+    // Check MongoDB collection for existing song
     var song = await _songs.Find<Song>(s => s.Name == songName && s.Artist == artistName).FirstOrDefaultAsync();
 
-    // If the song is not in the database, or if it is in the database but the tab has not been fetched yet
-    if (song == null || string.IsNullOrEmpty(song.TabContent))
+    if (song != null)
     {
-        // Fetch the tab
+        // If song exists in DB, return it
+        return Ok(song);
+    }
+    else
+    {
+        // If song does not exist in DB, scrape info from Ultimate-Guitar.com
+        var tabInfo = await _scraper.ParseTab($"https://www.ultimate-guitar.com/search.php?search_type=title&value={Uri.EscapeDataString(songName)}%20{Uri.EscapeDataString(artistName)}");
+
+        // Add new song to DB
+        var newSong = new Song
+        {
+            Name = tabInfo.SongName,
+            Artist = tabInfo.ArtistName,
+            TabUrl = tabInfo.TabUrl
+            // ...set other properties from tabInfo
+        };
+        await _songs.InsertOneAsync(newSong);
+
+        // Return scraped song info
+        return Ok(tabInfo);
+    }
+}
+
+
+[HttpGet("tabs/{songName}/{artistName}")]
+public async Task<ActionResult<UltimateTabInfo>> GetTab(string songName, string artistName)
+{
+    var song = await _songs.Find<Song>(s => s.Name == songName && s.Artist == artistName).FirstOrDefaultAsync();
+
+    if (song == null || string.IsNullOrEmpty(song.TabUrl)) // Changed from TabContent to TabUrl
+    {
         UltimateGuitarScraper scraper = new UltimateGuitarScraper();
         string tabUrl = await scraper.GetFirstTabUrl(songName);
-        string tabContent = await scraper.GetTabContent(tabUrl); // This method doesn't exist yet, you'll need to implement it
+        //string tabContent = await scraper.GetTabContent(tabUrl); // Commented out this line
 
-        // If the song is not in the database, create a new song
         if (song == null)
         {
             song = new Song
             {
                 Name = songName,
                 Artist = artistName,
-                // Genre and Chords aren't provided, so they'll need to be set later
                 Genre = null,
                 Chords = null,
                 SpotifyTrackId = await GetSpotifyTrackId(songName, artistName),
                 UltimateGuitarTabUrl = tabUrl,
-                TabContent = tabContent
+                //TabContent = tabContent // Commented out this line
             };
 
             _songs.InsertOne(song);
         }
-        // If the song is in the database, update it with the fetched tab
         else
         {
             song.UltimateGuitarTabUrl = tabUrl;
-            song.TabContent = tabContent;
-
-            _songs.ReplaceOne(s => s.Id == song.Id, song);
+            //_songs.ReplaceOne(s => s.Id == song.Id, song); // Commented out this line
         }
     }
 
-    // Construct UltimateTabInfo object
     var tabInfo = new UltimateTabInfo(
         song.Name,
         song.Artist,
-        "", // Provide the appropriate author value here
-        new UltimateTab(),
-        "", // Provide the appropriate difficulty value here
-        "", // Provide the appropriate key value here
-        "", // Provide the appropriate capo value here
-        "" // Provide the appropriate tuning value here
+        song.Genre,
+        song.Chords,
+        song.SpotifyTrackId,
+        song.UltimateGuitarTabUrl,
+        //song.TabContent, // Commented out this line
+        new UltimateTab(), 
+        "", 
+        "", 
+        "", 
+        "", 
+        song.TabUrl // Changed from tabUrl to TabUrl
     );
 
-    return tabInfo;
+    return Ok(tabInfo);
 }
+
 }
