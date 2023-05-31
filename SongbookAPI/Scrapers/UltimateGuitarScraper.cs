@@ -1,10 +1,14 @@
 using AngleSharp;
+using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Xml;
+using PuppeteerSharp;
+using System.Text.RegularExpressions;
 
 namespace SongbookAPI.Scrapers
 {
@@ -104,47 +108,71 @@ namespace SongbookAPI.Scrapers
             return tabInfo;
         }
 
-        public async Task<string> GetFirstTabUrl(string songName)
+        
+
+        public async Task<string> GetFirstTabUrl(string songName, string artistName)
         {
+            var browserFetcher = new BrowserFetcher();
+            await browserFetcher.DownloadAsync();
+
             // URL encode the song name for use in the URL
             songName = Uri.EscapeDataString(songName);
 
-            // Construct the search URL
-            string url = $"https://www.ultimate-guitar.com/search.php?search_type=title&order=&value={songName}";
+            string url = $"https://www.ultimate-guitar.com/search.php?search_type=title&value={artistName}%20{songName}";
 
-            // Download the search results HTML
-            string html = await DownloadHtml(url);
-
-            // Parse the HTML to find the first tab URL
-            var context = BrowsingContext.New(Configuration.Default);
-            var document = await context.OpenAsync(req => req.Content(html));
-
-            // Find the search result items
-            var searchResults = document.QuerySelectorAll("._1Hd7J");
-
-            var tabLinks = new List<(string Url, int ReviewCount, double TotalStars)>();
-
-            foreach (var searchResult in searchResults)
+            // Start the browser and open a new page
+            using (var browser = await Puppeteer.LaunchAsync(new LaunchOptions { Headless = true }))
             {
-                var tabLinkElement = searchResult.QuerySelector("._2KJtL._1mes3.kWOod");
-                var reviewCountElement = searchResult.QuerySelector("._3KcHJ");
-                var totalStarsElement = searchResult.QuerySelector("._3KcHJ");
+                using (var page = await browser.NewPageAsync())
+                {
 
-                if (tabLinkElement == null || reviewCountElement == null || totalStarsElement == null) continue;
+                    await page.SetRequestInterceptionAsync(true);
+                    page.Request += async (sender, e) =>
+                    {
+                        if (e.Request.ResourceType == ResourceType.Image ||
+                            e.Request.ResourceType == ResourceType.StyleSheet)
+                            await e.Request.AbortAsync();
+                        else
+                            await e.Request.ContinueAsync();
+                    };
 
-                string tabUrl = tabLinkElement.GetAttribute("href");
-                int reviewCount = int.Parse(reviewCountElement.TextContent);
-                double totalStars = double.Parse(totalStarsElement.TextContent.Split(' ')[0]);
+                    await page.GoToAsync(url, WaitUntilNavigation.DOMContentLoaded);
 
-                tabLinks.Add((tabUrl, reviewCount, totalStars));
+                    var resultNodes = await page.QuerySelectorAllAsync(".LQUZJ");
+                    double highestRating = 0.0;
+                    IElementHandle bestResultNode = null;
+
+
+                    foreach (var resultNode in resultNodes)
+                    {
+                        System.IO.File.WriteAllText(@"C:\Users\Corey\source\repos\SongbookApi\SongbookApi\Logs\scrapelog.txt", await resultNode.EvaluateFunctionAsync<string>("el => el.outerHTML"));
+
+                    }
+                    string highestRatingUrl = null;
+
+                    foreach (var resultNode in resultNodes)
+                    {
+                        string outerHTML = await resultNode.EvaluateFunctionAsync<string>("el => el.outerHTML");
+
+                        // Extract rating
+                        var matchRating = Regex.Match(outerHTML, "<div class=\"djFV9\">(\\d+)</div>");
+                        if (matchRating.Success && double.TryParse(matchRating.Groups[1].Value, out double rating) && rating > highestRating)
+                        {
+                            highestRating = rating;
+                            bestResultNode = resultNode;
+
+                            // Extract url
+                            var matchUrl = Regex.Match(outerHTML, "<a href=\"(https[^\"]+)\"");
+                            if (matchUrl.Success)
+                            {
+                                highestRatingUrl = matchUrl.Groups[1].Value;
+                            }
+                        }
+                    }
+
+                    return highestRatingUrl;
+                }
             }
-
-            // Sort by review count and total stars, and then pick the first tab
-            var bestTab = tabLinks.OrderByDescending(t => t.ReviewCount)
-                .ThenByDescending(t => t.TotalStars)
-                .FirstOrDefault();
-
-            return bestTab.Url;
         }
 
         public async Task<string> GetTabContent(string url)

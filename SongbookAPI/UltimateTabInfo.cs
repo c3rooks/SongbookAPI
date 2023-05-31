@@ -1,5 +1,9 @@
 public class UltimateTabInfo
 {
+    public UltimateTabInfo()
+    {
+    }
+
     public UltimateTabInfo(string title, string artist, string author, UltimateTab tab, string difficulty = null, string key = null, string capo = null, string tuning = null)
     {
         Title = title;

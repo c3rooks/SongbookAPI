@@ -34,72 +34,10 @@ public class SongsController : ControllerBase
         return Ok(tab);
     }
 
-    [HttpPost]
-    public async Task<ActionResult<Song>> Create(SongDTO songIn)
-    {
-        string tabUrl = await _scraper.GetFirstTabUrl(songIn.Name);
-
-        var song = new Song
-        {
-            Name = songIn.Name,
-            Artist = songIn.Artist,
-            Genre = songIn.Genre,
-            Chords = songIn.Chords,
-            SpotifyTrackId = await GetSpotifyTrackId(songIn.Name, songIn.Artist),
-            UltimateGuitarTabUrl = tabUrl 
-        };
-
-        _songs.InsertOne(song);
-        return CreatedAtRoute("GetSong", new { id = song.Id.ToString() }, song);
-    }
-
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Song>>> GetSongs()
     {
         return Ok(await _songs.Find(song => true).ToListAsync());
-    }
-
-    [HttpGet("{id}", Name = "GetSong")]
-    public async Task<ActionResult<Song>> GetSong(string id)
-    {
-        var song = await _songs.Find<Song>(song => song.Id == id).FirstOrDefaultAsync();
-
-        if (song == null)
-        {
-            return NotFound();
-        }
-
-        return song;
-    }
-
-    [HttpPut("{id}")]
-    public async Task<IActionResult> Update(string id, Song songIn)
-    {
-        var song = await _songs.Find<Song>(s => s.Id == id).FirstOrDefaultAsync();
-
-        if (song == null)
-        {
-            return NotFound();
-        }
-
-        _songs.ReplaceOne(s => s.Id == id, songIn);
-
-        return NoContent();
-    }
-
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(string id)
-    {
-        var song = await _songs.Find<Song>(song => song.Id == id).FirstOrDefaultAsync();
-
-        if (song == null)
-        {
-            return NotFound();
-        }
-
-        _songs.DeleteOne(song => song.Id == id);
-
-        return NoContent();
     }
 
     private async Task<string> GetSpotifyTrackId(string songName, string artistName)
@@ -126,58 +64,36 @@ public class SongsController : ControllerBase
     }
 
     [HttpGet("tabs/{songName}/{artistName}")]
-public async Task<ActionResult<UltimateTabInfo>> GetTab(string songName, string artistName)
+public async Task<ActionResult<string>> GetTab(string songName, string artistName)
 {
-    // Check if the song is already in the database
-    var song = await _songs.Find<Song>(s => s.Name == songName && s.Artist == artistName).FirstOrDefaultAsync();
+        // Check if the song is already in the database
+       
+        string song = null;
 
+        string tabUrl = "";
     // If the song is not in the database, or if it is in the database but the tab has not been fetched yet
-    if (song == null || string.IsNullOrEmpty(song.TabContent))
+    if (song == null)
     {
         // Fetch the tab
         UltimateGuitarScraper scraper = new UltimateGuitarScraper();
-        string tabUrl = await scraper.GetFirstTabUrl(songName);
+      //  string highestRatedTabUrl = await scraper.GetHighestRatedTabUrl(songName, artistName);
+         tabUrl = await scraper.GetFirstTabUrl(songName, artistName);
         string tabContent = await scraper.GetTabContent(tabUrl); // This method doesn't exist yet, you'll need to implement it
 
-        // If the song is not in the database, create a new song
-        if (song == null)
-        {
-            song = new Song
-            {
-                Name = songName,
-                Artist = artistName,
-                // Genre and Chords aren't provided, so they'll need to be set later
-                Genre = null,
-                Chords = null,
-                SpotifyTrackId = await GetSpotifyTrackId(songName, artistName),
-                UltimateGuitarTabUrl = tabUrl,
-                TabContent = tabContent
-            };
-
-            _songs.InsertOne(song);
-        }
-        // If the song is in the database, update it with the fetched tab
-        else
-        {
-            song.UltimateGuitarTabUrl = tabUrl;
-            song.TabContent = tabContent;
-
-            _songs.ReplaceOne(s => s.Id == song.Id, song);
-        }
+       
     }
 
     // Construct UltimateTabInfo object
-    var tabInfo = new UltimateTabInfo(
-        song.Name,
-        song.Artist,
-        "", // Provide the appropriate author value here
-        new UltimateTab(),
-        "", // Provide the appropriate difficulty value here
-        "", // Provide the appropriate key value here
-        "", // Provide the appropriate capo value here
-        "" // Provide the appropriate tuning value here
-    );
+    //var tabInfo = new UltimateTabInfo(
+    //    //song.Artist,
+    //    //"", // Provide the appropriate author value here
+    //    //new UltimateTab(),
+    //    //"", // Provide the appropriate difficulty value here
+    //    //"", // Provide the appropriate key value here
+    //    //"", // Provide the appropriate capo value here
+    //    //"" // Provide the appropriate tuning value here
+    //);
 
-    return tabInfo;
+    return tabUrl;
 }
 }
