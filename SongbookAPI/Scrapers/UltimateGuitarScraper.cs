@@ -108,7 +108,7 @@ namespace SongbookAPI.Scrapers
             return tabInfo;
         }
 
-        
+
 
         public async Task<string> GetFirstTabUrl(string songName, string artistName)
         {
@@ -125,7 +125,6 @@ namespace SongbookAPI.Scrapers
             {
                 using (var page = await browser.NewPageAsync())
                 {
-
                     await page.SetRequestInterceptionAsync(true);
                     page.Request += async (sender, e) =>
                     {
@@ -141,31 +140,44 @@ namespace SongbookAPI.Scrapers
                     var resultNodes = await page.QuerySelectorAllAsync(".LQUZJ");
                     double highestRating = 0.0;
                     IElementHandle bestResultNode = null;
-
-
-                    foreach (var resultNode in resultNodes)
-                    {
-                        System.IO.File.WriteAllText(@"C:\Users\Corey\source\repos\SongbookApi\SongbookApi\Logs\scrapelog.txt", await resultNode.EvaluateFunctionAsync<string>("el => el.outerHTML"));
-
-                    }
                     string highestRatingUrl = null;
 
                     foreach (var resultNode in resultNodes)
                     {
                         string outerHTML = await resultNode.EvaluateFunctionAsync<string>("el => el.outerHTML");
 
-                        // Extract rating
-                        var matchRating = Regex.Match(outerHTML, "<div class=\"djFV9\">(\\d+)</div>");
-                        if (matchRating.Success && double.TryParse(matchRating.Groups[1].Value, out double rating) && rating > highestRating)
-                        {
-                            highestRating = rating;
-                            bestResultNode = resultNode;
+                        // Extract tab type
+                        var matchType = Regex.Match(outerHTML, "<div class=\"lIKMM PdXKy\">([^<]+)</div>");
 
-                            // Extract url
-                            var matchUrl = Regex.Match(outerHTML, "<a href=\"(https[^\"]+)\"");
-                            if (matchUrl.Success)
+                        if (matchType.Success)
+                        {
+                            string type = matchType.Groups[1].Value.ToLower();
+
+                            // Skip 'official' and 'pro' tabs
+                            if (type == "official" || type == "pro")
                             {
-                                highestRatingUrl = matchUrl.Groups[1].Value;
+                                continue;
+                            }
+
+                            if (type == "chords" || type == "tab")
+                            {
+                                // Extract rating
+                                var matchRating = Regex.Match(outerHTML, "<div class=\"djFV9\">(\\d+)</div>");
+                                if (matchRating.Success && double.TryParse(matchRating.Groups[1].Value, out double rating))
+                                {
+                                    if (rating > highestRating)
+                                    {
+                                        highestRating = rating;
+                                        bestResultNode = resultNode;
+
+                                        // Extract url
+                                        var matchUrl = Regex.Match(outerHTML, "<a href=\"(https[^\"]+)\"");
+                                        if (matchUrl.Success)
+                                        {
+                                            highestRatingUrl = matchUrl.Groups[1].Value;
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -177,18 +189,21 @@ namespace SongbookAPI.Scrapers
 
         public async Task<string> GetTabContent(string url)
         {
-            var html = await DownloadHtml(url);
-            var doc = new HtmlParser().ParseDocument(html);
-            var tabContentNode = doc.QuerySelector("pre.js-tab-content");
-            if  (tabContentNode != null)
+            // Add a check here to ensure the URL is valid before using it
+            if (Uri.TryCreate(url, UriKind.Absolute, out Uri validatedUri))
             {
-                return tabContentNode.InnerHtml;
+                var html = await DownloadHtml(url);
+                var doc = new HtmlParser().ParseDocument(html);
+                var tabContentNode = doc.QuerySelector("pre.js-tab-content");
+                if (tabContentNode != null)
+                {
+                    return tabContentNode.InnerHtml;
+                }
             }
-            else
-            {
-                return null;
-            }
+
+            return null;
         }
+
     }
 }
 
