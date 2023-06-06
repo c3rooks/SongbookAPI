@@ -13,9 +13,13 @@ public class Song
     [BsonElement("Name")]
     public string Name { get; set; }
 
-    public string Artist { get; set; }
+    public string ArtistName { get; set; }
+
+    public string SongName { get; set; }
 
     public string TabContent { get; set; }
+
+    public string TabUrl{ get; set; }
 
     public string Genre { get; set; }
 

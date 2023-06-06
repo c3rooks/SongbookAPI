@@ -25,14 +25,38 @@ public class SongsController : ControllerBase
         _songs = _database.GetCollection<Song>("Songs");
     }
 
-    [HttpGet("tab/{id}")]
-    public async Task<IActionResult> GetTab(string id)
+    [HttpGet("tabs/{songName}/{artistName}")]
+    public async Task<ActionResult<string>> GetTab(string songName, string artistName)
     {
-        var url = $"https://www.ultimate-guitar.com/tab/{id}";
-        var html = await _scraper.DownloadHtml(url);
-        var tab = _scraper.ParseHtml(html);
-        return Ok(tab);
+        // Check if the song is already in the database
+        var song = await _songs.Find(s => s.ArtistName == artistName && s.SongName == songName).FirstOrDefaultAsync();
+
+        // If the song is not in the database, or if it is in the database but the tab has not been fetched yet
+        if (song == null || string.IsNullOrEmpty(song.TabUrl))
+        {
+            // Fetch the tab
+            var tabUrl = await _scraper.GetFirstTabUrl(songName, artistName);
+            var tabContent = await _scraper.GetTabContent(tabUrl);
+
+            // Create a new song if it does not exist in the database
+            if (song == null)
+            {
+                song = new Song { ArtistName = artistName, SongName = songName };
+            }
+
+            // Update song with fetched tab
+            song.TabUrl = tabUrl;
+            song.TabContent = tabContent;
+
+            // Upsert song in the database
+            var options = new ReplaceOptions { IsUpsert = true };
+            await _songs.ReplaceOneAsync(s => s.ArtistName == artistName && s.SongName == songName, song, options);
+        }
+
+        // At this point, song contains the fetched tab
+        return song.TabUrl;
     }
+
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Song>>> GetSongs()
@@ -63,37 +87,4 @@ public class SongsController : ControllerBase
         }  
     }
 
-    [HttpGet("tabs/{songName}/{artistName}")]
-public async Task<ActionResult<string>> GetTab(string songName, string artistName)
-{
-        // Check if the song is already in the database
-       
-        string song = null;
-
-        string tabUrl = "";
-    // If the song is not in the database, or if it is in the database but the tab has not been fetched yet
-    if (song == null)
-    {
-        // Fetch the tab
-        UltimateGuitarScraper scraper = new UltimateGuitarScraper();
-      //  string highestRatedTabUrl = await scraper.GetHighestRatedTabUrl(songName, artistName);
-         tabUrl = await scraper.GetFirstTabUrl(songName, artistName);
-        string tabContent = await scraper.GetTabContent(tabUrl); // This method doesn't exist yet, you'll need to implement it
-
-       
-    }
-
-    // Construct UltimateTabInfo object
-    //var tabInfo = new UltimateTabInfo(
-    //    //song.Artist,
-    //    //"", // Provide the appropriate author value here
-    //    //new UltimateTab(),
-    //    //"", // Provide the appropriate difficulty value here
-    //    //"", // Provide the appropriate key value here
-    //    //"", // Provide the appropriate capo value here
-    //    //"" // Provide the appropriate tuning value here
-    //);
-
-    return tabUrl;
-}
 }
