@@ -9,17 +9,25 @@ using System.Threading.Tasks;
 using System.Xml;
 using PuppeteerSharp;
 using System.Text.RegularExpressions;
+using SongbookAPI.Models;
 
 namespace SongbookAPI.Scrapers
 {
     public class UltimateGuitarScraper
     {
         private readonly HttpClient _httpClient = new HttpClient();
+        private readonly SongRepository _songRepository; 
+
+        public UltimateGuitarScraper(SongRepository songRepository) 
+        {
+            _songRepository = songRepository;
+        }
 
         public async Task<string> DownloadHtml(string url)
         {
             return await _httpClient.GetStringAsync(url);
         }
+        
 
         public UltimateTab ParseHtml(string html)
         {
@@ -112,6 +120,16 @@ namespace SongbookAPI.Scrapers
 
         public async Task<string> GetFirstTabUrl(string songName, string artistName)
         {
+
+            var song = await _songRepository.GetSongAsync(artistName, songName); // Replace _songs with _songRepository
+
+            // If the song is in the database and its tab URL has been fetched
+            if (song != null && !string.IsNullOrEmpty(song.TabUrl))
+            {
+                // Return the tab URL from the database
+                return song.TabUrl;
+            }
+
             var browserFetcher = new BrowserFetcher();
             await browserFetcher.DownloadAsync();
 
@@ -136,8 +154,9 @@ namespace SongbookAPI.Scrapers
                     };
 
                     await page.GoToAsync(url, WaitUntilNavigation.DOMContentLoaded);
-
+                    await page.WaitForSelectorAsync(".LQUZJ"); // wait until the element with class LQUZJ is available in the page
                     var resultNodes = await page.QuerySelectorAllAsync(".LQUZJ");
+
                     double highestRating = 0.0;
                     IElementHandle bestResultNode = null;
                     string highestRatingUrl = null;
