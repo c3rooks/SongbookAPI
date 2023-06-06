@@ -3,6 +3,7 @@
 **/.env
 **/.git
 **/.gitignore
+**/.DS_Store
 **/.project
 **/.settings
 **/.toolstarget
